@@ -6,9 +6,9 @@ open class Scenario(
     val cleaner: () -> Unit = {},
 ) {
 
-    fun <In> given(value: GivenData<In>): Input<In> =
-        Input(this, value)
-
-    fun <In> given(description: String, data: In): Input<In> =
-        given(GivenData(description, data))
+    fun branch(description: String): Branch =
+        Branch(
+            description = description,
+            scenario = this,
+        )
 }
