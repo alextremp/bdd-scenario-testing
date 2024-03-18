@@ -4,9 +4,9 @@ class Branch(
     val description: String,
     val scenario: Scenario,
 ) {
-    fun <Out> given(description: String, given: () -> Out): Interaction<Out> =
+    fun <In> given(description: String, input: DataProvider<In>): Interaction<In> =
         Interaction(
-            given = given,
+            input = input,
             description = "$description",
             branch = this
         )

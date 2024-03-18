@@ -2,8 +2,7 @@ package io.github.alextremp.bddscenariotesting
 
 open class Scenario(
     val description: String,
-    val creator: () -> Unit = {},
-    val cleaner: () -> Unit = {},
+    val reset: () -> Unit = {}
 ) {
 
     fun branch(description: String): Branch =

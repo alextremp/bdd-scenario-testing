@@ -1,14 +1,21 @@
 package io.github.alextremp.bddscenariotesting
 
 class Interaction<In>(
-    val given: () -> In,
+    val input: DataProvider<In>,
     val description: String,
     val branch: Branch,
 ) {
-    fun <Out> on(description: String, action: (In) -> Out): ScenarioBranch<Out> =
+    companion object {
+        fun <In, Out> builtAction(description: String, action: Action<In, Out>) = Action.Built(description, action)
+    }
+
+    fun <Out> on(description: String, action: Action<In, Out>): ScenarioBranch<Out> =
+        on(builtAction(description, action))
+
+    fun <Out> on(action: Action.Built<In, Out>): ScenarioBranch<Out> =
         ScenarioBranch(
-            action = { action(given()) },
-            description = "$description (${this.description})",
+            action = { action.execute(input.get()) },
+            description = "${action.description} (${this.description})",
             branch = branch
         )
 }

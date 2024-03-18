@@ -6,35 +6,39 @@ class ScenarioBranch<Data>(
     val branch: Branch,
 ) : Scenario(
     description = "${branch.scenario.description} > $description",
-    creator = {
-        branch.scenario.creator()
+    reset = {
+        branch.scenario.reset()
         action()
     },
-    cleaner = branch.scenario.cleaner,
 ) {
 
-    fun then(description: String, assertion: (Data) -> Unit): Scenario =
+    private var lastResult: Result<Data>? = null
+
+    fun then(description: String, assertion: (Result<Data>) -> Unit): ScenarioBranch<Data> =
         then(description to assertion)
 
-    fun then(vararg assertions: Pair<String, (Data) -> Unit>): Scenario =
+    fun then(vararg assertions: Pair<String, (Result<Data>) -> Unit>): ScenarioBranch<Data> =
         apply {
             Logger.info("Start $description > ${branch.description}")
             try {
-                creator()
-                action().also { data ->
-                    assertions.forEach { (description, assertion) ->
-                        try {
-                            assertion(data)
-                            Logger.success("✅ $description")
-                        } catch (e: Throwable) {
-                            Logger.error("❌ $description")
-                            throw e
-                        }
+                lastResult = null
+                reset()
+                runCatching { action() }
+                    .onSuccess { lastResult = Result.success(it) }
+                    .onFailure { lastResult = Result.error(it) }
+                assertions.forEach { (description, assertion) ->
+                    try {
+                        assertion(lastResult())
+                        Logger.success("✅ $description")
+                    } catch (e: Throwable) {
+                        Logger.error("❌ $description")
+                        throw e
                     }
                 }
             } finally {
-                cleaner()
                 Logger.info("Finished [${description}]")
             }
         }
+
+    fun lastResult(): Result<Data> = lastResult ?: throw IllegalStateException("Scenario has not been executed yet")
 }
