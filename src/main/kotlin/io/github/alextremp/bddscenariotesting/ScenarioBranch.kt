@@ -22,7 +22,7 @@ class ScenarioBranch<Data>(
             Logger.info("Start $description > ${branch.description}")
             try {
                 lastResult = null
-                reset()
+                branch.scenario.reset()
                 runCatching { action() }
                     .onSuccess { lastResult = Result.success(it) }
                     .onFailure { lastResult = Result.error(it) }
