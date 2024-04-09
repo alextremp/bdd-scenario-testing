@@ -27,13 +27,14 @@ class ScenarioTests {
             .branch("the system has a user with an anonymous id")
             .given("a user which only has an anonymous id") { IngestUserCookieIdsRequestMother.firstUnloggedUser }
             .on("the data is posted", ingestIngestUserCookieIdsRequestAction)
-            .then("the system creates a new user") { result ->
-                assertThat(result.isSuccess()).isTrue()
-                assertThat(userRepository.count()).isEqualTo(1)
-                val savedUser = userRepository.findById(result.data().userId)
-                assertThat(savedUser).isNotNull
-                assertThat(savedUser!!.cookieIds).containsAll(IngestUserCookieIdsRequestMother.firstUnloggedUser.cookieIds)
-            }
+
+        theSystemHasAnUnloggedUserScenario.then("the system creates a new user") { result ->
+            assertThat(result.isSuccess()).isTrue()
+            assertThat(userRepository.count()).isEqualTo(1)
+            val savedUser = userRepository.findById(result.data().userId)
+            assertThat(savedUser).isNotNull
+            assertThat(savedUser!!.cookieIds).containsAll(IngestUserCookieIdsRequestMother.firstUnloggedUser.cookieIds)
+        }
 
         val theSystemReceivedTheSameUnloggedUserTwoTimesScenario = theSystemHasAnUnloggedUserScenario
             .branch("the system has a user with an anonymous id")

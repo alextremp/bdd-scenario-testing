@@ -6,39 +6,37 @@ class ScenarioBranch<Data>(
     val branch: Branch,
 ) : Scenario(
     description = "${branch.scenario.description} > $description",
-    reset = {
-        branch.scenario.reset()
-        action()
-    },
 ) {
-
     private var lastResult: Result<Data>? = null
 
-    fun then(description: String, assertion: (Result<Data>) -> Unit): ScenarioBranch<Data> =
+    override val reset: () -> Unit = {
+        lastResult = null
+        branch.scenario.reset()
+        runCatching { action() }
+            .onSuccess { lastResult = Result.success(it) }
+            .onFailure { lastResult = Result.error(it) }
+    }
+
+    fun then(description: String, assertion: (Result<Data>) -> Unit): Scenario =
         then(description to assertion)
 
-    fun then(vararg assertions: Pair<String, (Result<Data>) -> Unit>): ScenarioBranch<Data> =
-        apply {
-            Logger.info("Start $description > ${branch.description}")
-            try {
-                lastResult = null
-                branch.scenario.reset()
-                runCatching { action() }
-                    .onSuccess { lastResult = Result.success(it) }
-                    .onFailure { lastResult = Result.error(it) }
-                assertions.forEach { (description, assertion) ->
-                    try {
-                        assertion(lastResult())
-                        Logger.success("✅ $description")
-                    } catch (e: Throwable) {
-                        Logger.error("❌ $description")
-                        throw e
-                    }
+    fun then(vararg assertions: Pair<String, (Result<Data>) -> Unit>): Scenario = apply {
+        Logger.info("Start $description > ${branch.description}")
+        try {
+            reset()
+            assertions.forEach { (description, assertion) ->
+                try {
+                    assertion(lastResult())
+                    Logger.success("✅ $description")
+                } catch (e: Throwable) {
+                    Logger.error("❌ $description")
+                    throw e
                 }
-            } finally {
-                Logger.info("Finished [${description}]")
             }
+        } finally {
+            Logger.info("Finished [${description}]")
         }
+    }
 
     fun lastResult(): Result<Data> = lastResult ?: throw IllegalStateException("Scenario has not been executed yet")
 }
